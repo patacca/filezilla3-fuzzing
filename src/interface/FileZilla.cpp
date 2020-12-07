@@ -1,6 +1,14 @@
+#include "../src/include/libfilezilla_engine.h"
+#include "../src/engine/directorylistingparser.h"
+
+#include <libfilezilla/format.hpp>
+#include <libfilezilla/util.hpp>
+
+#include <string.h>
+
 int main(int argc, char **argv)
 {
-	entry = "xxx"
+	char entry[] = "xxx"
 
 	CServer server;
 	server.SetType(DEFAULT);
