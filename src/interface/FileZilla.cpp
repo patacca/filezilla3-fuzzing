@@ -8,7 +8,7 @@
 
 int main(int argc, char **argv)
 {
-	char entry[] = "xxx"
+	char entry[] = "xxx";
 
 	CServer server;
 	server.SetType(DEFAULT);
