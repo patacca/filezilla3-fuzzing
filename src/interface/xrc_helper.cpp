@@ -48,37 +48,9 @@ void InitHandlers(wxXmlResource& res)
 namespace {
 void LoadXrcFile(std::wstring const& file)
 {
-	static std::unordered_set<std::wstring> seen;
-
-	if (seen.insert(file).second) {
-		std::wstring dir = wxGetApp().GetResourceDir().GetPath() + L"xrc/";
-		wxXmlResource* pResource = wxXmlResource::Get();
-		pResource->LoadFile(wxString(dir + file));
-	}
 }
 }
 
 void InitXrc(std::wstring const& file)
 {
-	static bool initialized = false;
-	if (!initialized) {
-		initialized = true;
-
-		wxXmlResource* pResource = wxXmlResource::Get();
-
-#ifndef __WXDEBUG__
-		pResource->SetFlags(pResource->GetFlags() | wxXRC_NO_RELOADING);
-#endif
-
-		InitHandlers(*pResource);
-	}
-
-	fz::local_filesys fs;
-	std::wstring dir = wxGetApp().GetResourceDir().GetPath() + L"xrc/";
-	if (file.empty()) {
-		LoadXrcFile(L"dialogs.xrc");
-	}
-	else {
-		LoadXrcFile(file);
-	}
 }

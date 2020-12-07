@@ -717,128 +717,10 @@ protected:
 
 bool CSiteManagerDialog::Load()
 {
-	tree_->DeleteAllItems();
-
-	// We have to synchronize access to sitemanager.xml so that multiple processed don't write
-	// to the same file or one is reading while the other one writes.
-	CInterProcessMutex mutex(MUTEX_SITEMANAGER);
-
-	// Load default sites
-	bool hasDefaultSites = LoadDefaultSites();
-	if (hasDefaultSites) {
-		m_ownSites = tree_->AppendItem(tree_->GetRootItem(), _("My Sites"), 0, 0);
-	}
-	else {
-		m_ownSites = tree_->AddRoot(_("My Sites"), 0, 0);
-	}
-
-	wxTreeItemId treeId = m_ownSites;
-	tree_->SetItemImage(treeId, 1, wxTreeItemIcon_Expanded);
-	tree_->SetItemImage(treeId, 1, wxTreeItemIcon_SelectedExpanded);
-
-	CXmlFile file(wxGetApp().GetSettingsFile(_T("sitemanager")));
-	auto document = file.Load();
-	if (!document) {
-		wxString msg = file.GetError() + _T("\n") + _("The Site Manager cannot be used unless the file gets repaired.");
-		wxMessageBoxEx(msg, _("Error loading xml file"), wxICON_ERROR);
-
-		return false;
-	}
-
-	if (file.IsFromFutureVersion()) {
-		wxString msg = wxString::Format(_("The file '%s' has been created by a more recent version of FileZilla.\nLoading files created by newer versions can result in loss of data.\nDo you want to continue?"), file.GetFileName());
-		if (wxMessageBoxEx(msg, _("Detected newer version of FileZilla"), wxICON_QUESTION | wxYES_NO) != wxYES) {
-			return false;
-		}
-	}
-
-	auto element = document.child("Servers");
-	if (!element) {
-		return true;
-	}
-
-	std::wstring lastSelection = COptions::Get()->get_string(OPTION_SITEMANAGER_LASTSELECTED);
-	if (!lastSelection.empty() && lastSelection[0] == '0') {
-		if (lastSelection == _T("0")) {
-			tree_->SafeSelectItem(treeId);
-		}
-		else {
-			lastSelection = lastSelection.substr(1);
-		}
-	}
-	else {
-		lastSelection.clear();
-	}
-	CSiteManagerXmlHandler_Tree handler(tree_, treeId, lastSelection, false);
-
-	bool res = CSiteManager::Load(element, handler);
-
-	tree_->SortChildren(treeId);
-	tree_->Expand(treeId);
-	if (!tree_->GetSelection()) {
-		tree_->SafeSelectItem(treeId);
-	}
-
-	tree_->EnsureVisible(tree_->GetSelection());
-
-	return res;
 }
 
 bool CSiteManagerDialog::Save(pugi::xml_node element, wxTreeItemId treeId)
 {
-	if (!m_pSiteManagerMutex) {
-		return false;
-	}
-
-	if (!element || !treeId) {
-		// We have to synchronize access to sitemanager.xml so that multiple processed don't write
-		// to the same file or one is reading while the other one writes.
-		CInterProcessMutex mutex(MUTEX_SITEMANAGER);
-
-		CXmlFile xml(wxGetApp().GetSettingsFile(_T("sitemanager")));
-
-		auto document = xml.Load();
-		if (!document) {
-			wxString msg = xml.GetError() + _T("\n") + _("Any changes made in the Site Manager could not be saved.");
-			wxMessageBoxEx(msg, _("Error loading xml file"), wxICON_ERROR);
-
-			return false;
-		}
-
-		auto servers = document.child("Servers");
-		while (servers) {
-			document.remove_child(servers);
-			servers = document.child("Servers");
-		}
-		element = document.append_child("Servers");
-
-		if (!element) {
-			return true;
-		}
-
-		bool res = Save(element, m_ownSites);
-
-		if (!xml.Save(false)) {
-			if (COptions::Get()->get_int(OPTION_DEFAULT_KIOSKMODE) == 2) {
-				return res;
-			}
-			wxString msg = wxString::Format(_("Could not write \"%s\", any changes to the Site Manager could not be saved: %s"), xml.GetFileName(), xml.GetError());
-			wxMessageBoxEx(msg, _("Error writing xml file"), wxICON_ERROR);
-		}
-
-		return res;
-	}
-
-	wxTreeItemId child;
-	wxTreeItemIdValue cookie;
-	child = tree_->GetFirstChild(treeId, cookie);
-	while (child.IsOk()) {
-		SaveChild(element, child);
-
-		child = tree_->GetNextChild(treeId, cookie);
-	}
-
-	return false;
 }
 
 bool CSiteManagerDialog::SaveChild(pugi::xml_node element, wxTreeItemId child)
@@ -1512,48 +1394,6 @@ void CSiteManagerDialog::OnCopySite(wxCommandEvent&)
 
 bool CSiteManagerDialog::LoadDefaultSites()
 {
-	CLocalPath const defaultsDir = wxGetApp().GetDefaultsDir();
-	if (defaultsDir.empty()) {
-		return false;
-	}
-
-	CXmlFile file(defaultsDir.GetPath() + _T("fzdefaults.xml"));
-
-	auto document = file.Load();
-	if (!document) {
-		return false;
-	}
-
-	auto element = document.child("Servers");
-	if (!element) {
-		return false;
-	}
-
-	int style = tree_->GetWindowStyle();
-	tree_->SetWindowStyle(style | wxTR_HIDE_ROOT);
-	wxTreeItemId root = tree_->AddRoot(wxString(), 0, 0);
-
-	m_predefinedSites = tree_->AppendItem(root, _("Predefined Sites"), 0, 0);
-	tree_->SetItemImage(m_predefinedSites, 1, wxTreeItemIcon_Expanded);
-	tree_->SetItemImage(m_predefinedSites, 1, wxTreeItemIcon_SelectedExpanded);
-
-	std::wstring lastSelection = COptions::Get()->get_string(OPTION_SITEMANAGER_LASTSELECTED);
-	if (!lastSelection.empty() && lastSelection[0] == '1') {
-		if (lastSelection == _T("1")) {
-			tree_->SafeSelectItem(m_predefinedSites);
-		}
-		else {
-			lastSelection = lastSelection.substr(1);
-		}
-	}
-	else {
-		lastSelection.clear();
-	}
-	CSiteManagerXmlHandler_Tree handler(tree_, m_predefinedSites, lastSelection, true);
-
-	CSiteManager::Load(element, handler);
-
-	return true;
 }
 
 bool CSiteManagerDialog::IsPredefinedItem(wxTreeItemId item)

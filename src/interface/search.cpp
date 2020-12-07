@@ -1769,67 +1769,10 @@ int CSearchDialogFileList::GetOverlayIndex(int item)
 
 void CSearchDialog::LoadConditions()
 {
-	CInterProcessMutex mutex(MUTEX_SEARCHCONDITIONS);
-
-	CXmlFile file(wxGetApp().GetSettingsFile(L"search"));
-	auto document = file.Load(true);
-	if (!document) {
-		wxMessageBoxEx(file.GetError(), _("Error loading xml file"), wxICON_ERROR);
-		return;
-	}
-
-	auto filter = document.child("Filter");
-	if (!filter) {
-		return;
-	}
-
-	if (!CFilterManager::LoadFilter(filter, m_search_filter)) {
-		m_search_filter = CFilter();
-	}
-
-	auto comparative = document.child("Comparative");
-	if (!comparative) {
-		return;
-	}
-
-	if (GetTextElement(comparative, "CompareSizes") == L"1") {
-		xrc_call(*this, "ID_COMPARE_SIZE", &wxRadioButton::SetValue, true);
-	}
-	else {
-		xrc_call(*this, "ID_COMPARE_DATE", &wxRadioButton::SetValue, true);
-	}
-	xrc_call(*this, "ID_COMPARE_HIDEIDENTICAL", &wxCheckBox::SetValue, GetTextElement(comparative, "HideIdentical") == L"1");
 }
 
 void CSearchDialog::SaveConditions()
 {
-	CInterProcessMutex mutex(MUTEX_SEARCHCONDITIONS);
-
-	CXmlFile file(wxGetApp().GetSettingsFile(L"search"));
-	auto document = file.Load(true);
-	if (!document) {
-		wxMessageBoxEx(file.GetError(), _("Error loading xml file"), wxICON_ERROR);
-		return;
-	}
-
-	pugi::xml_node filter;
-	while ((filter = document.child("Filter"))) {
-		document.remove_child(filter);
-	}
-	filter = document.append_child("Filter");
-
-	CFilterManager::SaveFilter(filter, m_search_filter);
-
-	pugi::xml_node comparative;
-	while ((comparative = document.child("Comparative"))) {
-		document.remove_child(comparative);
-	}
-	comparative = document.append_child("Comparative");
-
-	AddTextElement(comparative, "CompareSizes", xrc_call(*this, "ID_COMPARE_SIZE", &wxRadioButton::GetValue) ? "1" : "0");
-	AddTextElement(comparative, "HideIdentical", xrc_call(*this, "ID_COMPARE_HIDEIDENTICAL", &wxCheckBox::GetValue) ? "1" : "0");
-
-	file.Save(true);
 }
 
 void CSearchDialog::OnChangeSearchMode(wxCommandEvent&)

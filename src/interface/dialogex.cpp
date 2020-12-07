@@ -129,37 +129,6 @@ wxString wxDialogEx::GetChildLabel(int id)
 
 int wxDialogEx::ShowModal()
 {
-	CenterOnParent();
-
-#ifdef __WXMSW__
-	// All open menus need to be closed or app will become unresponsive.
-	::EndMenu();
-
-	// For same reason release mouse capture.
-	// Could happen during drag&drop with notification dialogs.
-	::ReleaseCapture();
-#endif
-
-	shown_dialogs_.push_back(this);
-#ifdef __WXMAC__
-	shown_dialogs_creation_events_.push_back(wxGetApp().MacGetCurrentEvent());
-#endif
-
-	if (acceleratorTable_.empty()) {
-		SetAcceleratorTable(wxNullAcceleratorTable);
-	}
-	else {
-		SetAcceleratorTable(wxAcceleratorTable(acceleratorTable_.size(), acceleratorTable_.data()));
-	}
-
-	int ret = wxDialog::ShowModal();
-
-#ifdef __WXMAC__
-	shown_dialogs_creation_events_.pop_back();
-#endif
-	shown_dialogs_.pop_back();
-
-	return ret;
 }
 
 bool wxDialogEx::ReplaceControl(wxWindow* old, wxWindow* wnd)
@@ -174,37 +143,6 @@ bool wxDialogEx::ReplaceControl(wxWindow* old, wxWindow* wnd)
 
 bool wxDialogEx::CanShowPopupDialog(wxTopLevelWindow * parent)
 {
-	if (IsShowingMessageBox()) {
-		// There already a message box showing
-		return false;
-	}
-
-	if (!shown_dialogs_.empty() && shown_dialogs_.back() != parent) {
-		// There is an open dialog which isn't the expected parent
-		return false;
-	}
-
-	wxMouseState mouseState = wxGetMouseState();
-	if (mouseState.LeftIsDown() || mouseState.MiddleIsDown() || mouseState.RightIsDown()) {
-		// Displaying a dialog while the user is clicking is extremely confusing, don't do it.
-		return false;
-	}
-#ifdef __WXMSW__
-	// During a drag & drop we cannot show a dialog. Doing so can render the program unresponsive
-	if (GetCapture()) {
-		return false;
-	}
-#endif
-
-#ifdef __WXMAC__
-	void* ev = wxGetApp().MacGetCurrentEvent();
-	if (ev && (shown_dialogs_creation_events_.empty() || ev != shown_dialogs_creation_events_.back())) {
-		// We're inside an event handler for a native mac event, such as a popup menu
-		return false;
-	}
-#endif
-
-	return true;
 }
 
 void wxDialogEx::InitDialog()

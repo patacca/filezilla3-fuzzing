@@ -58,100 +58,11 @@ void append(wxString& error, CFErrorRef ref, wxString const& func)
 
 void OSXSandboxUserdirs::Load()
 {
-	CInterProcessMutex mutex(MUTEX_MAC_SANDBOX_USERDIRS);
-
-	CXmlFile file(wxGetApp().GetSettingsFile(L"osx_sandbox_userdirs"));
-	auto xml = file.Load(true);
-	if (!xml) {
-		wxMessageBoxEx(file.GetError(), _("Error loading xml file"), wxICON_ERROR);
-		return;
-	}
-
-	wxString error;
-	for (auto xdir = xml.child("dir"); xdir; xdir = xdir.next_sibling("dir")) {
-		auto data = fz::hex_decode(std::string(xdir.child_value()));
-		if (data.empty()) {
-			continue;
-		}
-
-		wxCFDataRef bookmark(data.data(), data.size());
-
-		Boolean stale = false;
-		CFErrorRef errorRef = 0;
-		wxCFRef<CFURLRef> url(CFURLCreateByResolvingBookmarkData(0, bookmark.get(), kCFURLBookmarkResolutionWithSecurityScope, 0, 0, &stale, &errorRef));
-		if (!url) {
-			append(error, errorRef, L"CFURLCreateByResolvingBookmarkData");
-			continue;
-		}
-
-		if (stale) {
-			wxCFDataRef new_bookmark(CFURLCreateBookmarkData(0, url.get(), kCFURLBookmarkCreationWithSecurityScope, 0, 0, 0));
-			if (new_bookmark) {
-				bookmark = new_bookmark;
-			}
-		}
-
-		auto path = GetPath(url);
-		if (path.empty()) {
-			error += L"\n";
-			error += _("Could not get native path from CFURL");
-			continue;
-		}
-
-		if (!CFURLStartAccessingSecurityScopedResource(url.get())) {
-			error += "\n";
-			error += wxString::Format(_("Could not access path %s"), path);
-			continue;
-		}
-
-		bool dir = xdir.attribute("dir").value() != std::string("false");
-		if (dir && path.back() != '/') {
-			path += '/';
-		}
-
-		auto it = userdirs_.find(path);
-		if (it != userdirs_.end()) {
-			CFURLStopAccessingSecurityScopedResource(it->second.url.get());
-		}
-		userdirs_[path] = Data{dir, bookmark, url};
-	}
-
-	if (!error.empty()) {
-		error = _("Access to some local directories could not be restored:") + _T("\n") + error;
-		error += L"\n\n";
-		error += _("Please check the granted permissions and re-add any missing local directories you are working with in the dialog that follows.");
-		wxMessageBoxEx(error, _("Could not restore directory access"), wxICON_EXCLAMATION);
-		OSXSandboxUserdirsDialog dlg;
-		dlg.Run(0);
-	}
-
-	Save();
 }
 
 
 bool OSXSandboxUserdirs::Save()
 {
-	CXmlFile file(wxGetApp().GetSettingsFile(L"osx_sandbox_userdirs"));
-	auto xml = file.Load(true);
-	if (!xml) {
-		wxMessageBoxEx(file.GetError(), _("Error loading xml file"), wxICON_ERROR);
-		return false;
-	}
-
-	while (xml.remove_child("dir")) {}
-
-	for (auto const& dir : userdirs_) {
-		std::vector<uint8_t> data;
-		data.resize(dir.second.bookmark.GetLength());
-		dir.second.bookmark.GetBytes(CFRangeMake(0, data.size()), data.data());
-
-		auto child = xml.append_child("dir");
-		child.append_attribute("path") = fz::to_utf8(dir.first).c_str();
-		child.append_attribute("dir") = dir.second.dir ? "true" : "false";
-		child.text().set(fz::hex_encode<std::string>(data).c_str());
-	}
-
-	return file.Save(true);
 }
 
 bool OSXSandboxUserdirs::Add()

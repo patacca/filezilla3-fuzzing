@@ -15,7 +15,6 @@
 #include <wx/statbox.h>
 
 CertStore::CertStore()
-	: m_xmlFile(wxGetApp().GetSettingsFile(L"trustedcerts"))
 {
 }
 

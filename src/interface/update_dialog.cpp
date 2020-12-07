@@ -279,61 +279,6 @@ void CUpdateDialog::InitFooter()
 
 void CUpdateDialog::Wrap()
 {
-	if (!content_) {
-		return;
-	}
-
-	GetSizer()->Fit(this);
-
-	wxSize canvas;
-	canvas.x = GetSize().x - content_->GetSize().x;
-	canvas.y = GetSize().y - content_->GetSize().y;
-
-	// Wrap pages nicely
-	std::vector<wxWindow*> pages;
-	for (auto const& panel : panels_) {
-		pages.push_back(panel);
-	}
-	wxGetApp().GetWrapEngine()->WrapRecursive(pages, 1.33, "Update", canvas);
-
-	// Keep track of maximum page size
-	wxSize size = GetSizer()->GetMinSize();
-	for (auto const& panel : panels_) {
-		if (panel->GetSizer()) {
-			size.IncTo(panel->GetSizer()->GetMinSize());
-		}
-	}
-
-	wxSize panelSize = size;
-#ifdef __WXGTK__
-	panelSize.x += 1;
-#endif
-	content_->SetInitialSize(panelSize);
-
-	// Adjust pages sizes according to maximum size
-	for (auto const& panel : panels_) {
-		if (panel->GetSizer()) {
-			panel->GetSizer()->SetMinSize(size);
-			panel->GetSizer()->Fit(panel);
-			panel->GetSizer()->SetSizeHints(panel);
-		}
-		if (GetLayoutDirection() == wxLayout_RightToLeft) {
-			panel->Move(wxPoint(0, 0));
-		}
-	}
-
-	GetSizer()->Fit(this);
-	GetSizer()->SetSizeHints(this);
-
-#ifdef __WXGTK__
-	// Pre-show dialog under GTK, else panels won't get initialized properly
-	Show();
-#endif
-
-	for (auto const& panel : panels_) {
-		panel->Hide();
-	}
-	panels_[0]->Show();
 }
 
 void CUpdateDialog::UpdaterStateChanged(UpdaterState s, build const& v)

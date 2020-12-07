@@ -927,67 +927,6 @@ void CState::HandleDroppedFiles(const wxFileDataObject* pFileDataObject, const C
 
 bool CState::RecursiveCopy(CLocalPath source, const CLocalPath& target)
 {
-	if (source.empty() || target.empty()) {
-		return false;
-	}
-
-	if (source == target) {
-		return false;
-	}
-
-	if (source.IsParentOf(target)) {
-		return false;
-	}
-
-	if (!source.HasParent()) {
-		return false;
-	}
-
-	std::wstring last_segment;
-	if (!source.MakeParent(&last_segment)) {
-		return false;
-	}
-
-	std::list<std::wstring> dirsToVisit;
-	dirsToVisit.push_back(last_segment + CLocalPath::path_separator);
-
-	fz::native_string const nsource = fz::to_native(source.GetPath());
-
-	// Process any subdirs which still have to be visited
-	while (!dirsToVisit.empty()) {
-		std::wstring dirname = dirsToVisit.front();
-		dirsToVisit.pop_front();
-		wxMkdir(target.GetPath() + dirname);
-
-		fz::local_filesys fs;
-		if (!fs.begin_find_files(nsource + fz::to_native(dirname), false)) {
-			continue;
-		}
-
-		bool is_link{};
-		fz::local_filesys::type t{};
-		fz::native_string file;
-		while (fs.get_next_file(file, is_link, t, 0, 0, 0)) {
-			if (file.empty()) {
-				wxGetApp().DisplayEncodingWarning();
-				continue;
-			}
-
-			if (t == fz::local_filesys::dir) {
-				if (is_link) {
-					continue;
-				}
-
-				std::wstring const subDir = dirname + fz::to_wstring(file) + CLocalPath::path_separator;
-				dirsToVisit.push_back(subDir);
-			}
-			else {
-				wxCopyFile(source.GetPath() + dirname + file, target.GetPath() + dirname + file);
-			}
-		}
-	}
-
-	return true;
 }
 
 bool CState::DownloadDroppedFiles(const CRemoteDataObject* pRemoteDataObject, const CLocalPath& path, bool queueOnly /*=false*/)

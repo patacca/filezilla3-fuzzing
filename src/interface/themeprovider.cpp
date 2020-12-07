@@ -40,46 +40,11 @@ wxSize CTheme::StringToSize(std::wstring const& str)
 
 bool CTheme::Load(std::wstring const& theme)
 {
-	theme_ = theme;
-	path_ = wxGetApp().GetResourceDir().GetPath() + theme;
-	if (!theme.empty()) {
-		path_ += L"/";
-	}
-
-	CXmlFile xml(path_ + L"theme.xml");
-	auto xtheme = xml.Load().child("Theme");
-	if (!xtheme) {
-		return false;
-	}
-
-	name_ = GetTextElement(xtheme, "Name");
-	author_ = GetTextElement(xtheme, "Author");
-	mail_ = GetTextElement(xtheme, "Mail");
-
-	for (auto xSize = xtheme.child("size"); xSize; xSize = xSize.next_sibling("size")) {
-		wxSize size = StringToSize(GetTextElement(xSize));
-		if (size.x > 0 && size.y > 0) {
-			bool primary = std::string(xSize.attribute("primary").value()) == "1";
-			sizes_[size] = primary;
-		}
-	}
-
-	timestamp_ = fz::local_filesys::get_modification_time(fz::to_native(path_) + fzT("theme.xml"));
-
-	return !sizes_.empty();
+	
 }
 
 bool CTheme::Load(std::wstring const& theme, std::vector<wxSize> sizes)
 {
-	path_ = wxGetApp().GetResourceDir().GetPath() + theme;
-	if (!theme.empty()) {
-		path_ += L"/";
-	}
-
-	for (auto const& size : sizes) {
-		sizes_[size] = false;
-	}
-	return !sizes_.empty();
 }
 
 wxBitmap const& CTheme::LoadBitmap(std::wstring const& name, wxSize const& size)
@@ -109,35 +74,6 @@ wxBitmap const& CTheme::LoadBitmap(std::wstring const& name, wxSize const& size)
 
 wxBitmap const& CTheme::DoLoadBitmap(std::wstring const& name, wxSize const& size, cacheEntry & cache)
 {
-	// Go through all the theme sizes and look for the file we need
-
-	wxSize pivotSize = size;
-#ifdef __WXMAC__
-	if (wxGetApp().GetTopWindow()) {
-		double scale = wxGetApp().GetTopWindow()->GetContentScaleFactor();
-		pivotSize.Scale(scale, scale);
-	}
-#endif
-	// First look equal or larger icon
-	auto const pivot = sizes_.lower_bound(pivotSize);
-	for (auto pit = pivot; pit != sizes_.end(); ++pit) {
-		wxBitmap const& bmp = LoadBitmapWithSpecificSizeAndScale(name, pit->first, size, cache);
-		if (bmp.IsOk()) {
-			return bmp;
-		}
-	}
-
-	// Now look smaller icons
-	for (auto pit = decltype(sizes_)::reverse_iterator(pivot); pit != sizes_.rend(); ++pit) {
-		wxBitmap const& bmp = LoadBitmapWithSpecificSizeAndScale(name, pit->first, size, cache);
-		if (bmp.IsOk()) {
-			return bmp;
-		}
-	}
-
-	// Out of luck.
-	static wxBitmap empty;
-	return empty;
 }
 
 wxBitmap const& CTheme::LoadBitmapWithSpecificSizeAndScale(std::wstring const& name, wxSize const& size, wxSize const& scale, cacheEntry & cache)
@@ -382,23 +318,6 @@ wxAnimation CThemeProvider::CreateAnimation(wxArtID const& id, wxSize const& siz
 
 std::vector<std::wstring> CThemeProvider::GetThemes()
 {
-	std::vector<std::wstring> themes;
-
-	CLocalPath const resourceDir = wxGetApp().GetResourceDir();
-
-	fz::local_filesys fs;
-
-	fz::native_string path = fz::to_native(resourceDir.GetPath());
-	if (fs.begin_find_files(path, true)) {
-		fz::native_string name;
-		while (fs.get_next_file(name)) {
-			if (fz::local_filesys::get_file_type(path + name + fzT("/theme.xml")) == fz::local_filesys::file) {
-				themes.push_back(fz::to_wstring(name));
-			}
-		}
-	}
-
-	return themes;
 }
 
 std::vector<wxBitmap> CThemeProvider::GetAllImages(std::wstring const& theme, wxSize const& size)
