@@ -921,27 +921,6 @@ bool CFilterManager::LoadFilter(pugi::xml_node& element, CFilter& filter)
 
 void CFilterManager::LoadFilters()
 {
-	if (m_loaded) {
-		return;
-	}
-
-	m_loaded = true;
-
-	CReentrantInterProcessMutexLocker mutex(MUTEX_FILTERS);
-
-	std::wstring file(wxGetApp().GetSettingsFile(L"filters"));
-	if (fz::local_filesys::get_size(fz::to_native(file)) < 1) {
-		file = wxGetApp().GetResourceDir().GetPath() + L"defaultfilters.xml";
-	}
-
-	CXmlFile xml(file);
-	auto element = xml.Load();
-	LoadFilters(element);
-
-	if (!element) {
-		wxString msg = xml.GetError() + _T("\n\n") + _("Any changes made to the filters will not be saved.");
-		wxMessageBoxEx(msg, _("Error loading xml file"), wxICON_ERROR);
-	}
 }
 
 void CFilterManager::Import(pugi::xml_node& element)
@@ -1025,54 +1004,6 @@ void CFilterManager::LoadFilters(pugi::xml_node& element)
 
 void CFilterManager::SaveFilters()
 {
-	CReentrantInterProcessMutexLocker mutex(MUTEX_FILTERS);
-
-	CXmlFile xml(wxGetApp().GetSettingsFile(_T("filters")));
-	auto element = xml.Load();
-	if (!element) {
-		wxString msg = xml.GetError() + _T("\n\n") + _("Any changes made to the filters could not be saved.");
-		wxMessageBoxEx(msg, _("Error loading xml file"), wxICON_ERROR);
-
-		return;
-	}
-
-	auto xFilters = element.child("Filters");
-	while (xFilters) {
-		element.remove_child(xFilters);
-		xFilters = element.child("Filters");
-	}
-
-	xFilters = element.append_child("Filters");
-
-	for (auto const& filter : m_globalFilters) {
-		auto xFilter = xFilters.append_child("Filter");
-		SaveFilter(xFilter, filter);
-	}
-
-	auto xSets = element.child("Sets");
-	while (xSets) {
-		element.remove_child(xSets);
-		xSets = element.child("Sets");
-	}
-
-	xSets = element.append_child("Sets");
-	SetAttributeInt(xSets, "Current", m_globalCurrentFilterSet);
-
-	for (auto const& set : m_globalFilterSets) {
-		auto xSet = xSets.append_child("Set");
-
-		if (!set.name.empty()) {
-			AddTextElement(xSet, "Name", set.name);
-		}
-
-		for (unsigned int i = 0; i < set.local.size(); ++i) {
-			auto xItem = xSet.append_child("Item");
-			AddTextElement(xItem, "Local", set.local[i] ? "1" : "0");
-			AddTextElement(xItem, "Remote", set.remote[i] ? "1" : "0");
-		}
-	}
-
-	xml.Save(true);
 }
 
 void CFilterManager::SaveFilter(pugi::xml_node& element, const CFilter& filter)
