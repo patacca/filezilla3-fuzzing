@@ -31,7 +31,7 @@ int main(int argc, char **argv)
 		parser.AddData(data, aflBufLen);
 
 		CDirectoryListing listing = parser.Parse(CServerPath());
-		printf("Data: %s  \n  Got:\n%s", aflBuf, listing[0].dump());
+		printf("Data: %s  \n  Got:\n%s", aflBuf, listing[0].dump().c_str());
 		
 
 		//~ std::string msg = fz::sprintf("Data: %s, count: %u", entry.data, listing.size());
