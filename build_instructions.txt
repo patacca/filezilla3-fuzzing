@@ -1,0 +1,11 @@
+export PKG_CONFIG_PATH=/home/mori/filezilla-prj/lib/pkgconfig
+export AFL_LLVM_ALLOWLIST=/home/mori/fuzzing/filezilla3/trunk/allow_fileslist.txt
+# Only one of them since they are mutually exclusive
+export AFL_HARDEN=1
+export AFL_USE_ASAN=1
+
+
+CC=/usr/local/bin/afl-clang-lto CXX=/usr/local/bin/afl-clang-lto++ LD=/usr/local/bin/afl-clang-lto RANLIB=/usr/local/bin/llvm-ranlib AR=/usr/local/bin/llvm-ar ../configure --prefix=/home/mori/filezilla-prj --with-pugixml=builtin [--disable-shared]
+make -j 40
+make install
+
