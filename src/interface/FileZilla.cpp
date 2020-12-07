@@ -30,7 +30,7 @@ int main(int argc, char **argv)
 		memcpy(data, aflBuf, aflBufLen);
 		parser.AddData(data, aflBufLen);
 
-		//~ CDirectoryListing listing = parser.Parse(CServerPath());
+		CDirectoryListing listing = parser.Parse(CServerPath());
 
 		//~ std::string msg = fz::sprintf("Data: %s, count: %u", entry.data, listing.size());
 		//~ fz::replace_substrings(msg, "\r", std::string());
