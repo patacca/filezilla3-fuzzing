@@ -16,10 +16,9 @@ int main(int argc, char **argv)
 	CDirectoryListingParser parser(0, server);
 
 	size_t len = 3;
-	//~ char* data = new char[len];
-	//~ memcpy(data, entry.data.c_str(), len);
-	//~ parser.AddData(data, len);
-	parser.AddData(entry, len);
+	char* data = new char[len];
+	memcpy(data, entry, len);
+	parser.AddData(data, len);
 
 	//~ CDirectoryListing listing = parser.Parse(CServerPath());
 
