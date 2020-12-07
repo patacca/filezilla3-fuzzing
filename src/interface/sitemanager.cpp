@@ -407,12 +407,10 @@ std::pair<std::unique_ptr<Site>, Bookmark> CSiteManager::GetSiteByPath(std::wstr
 
 std::pair<std::unique_ptr<Site>, Bookmark> CSiteManager::DoGetSiteByPath(std::wstring sitePath, wxString& error)
 {
-	return true;
 }
 
 std::wstring CSiteManager::AddServer(Site site)
 {
-	return true;
 }
 
 pugi::xml_node CSiteManager::GetElementByPath(pugi::xml_node node, std::vector<std::wstring> const& segments)
