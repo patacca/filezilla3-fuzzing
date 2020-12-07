@@ -35,19 +35,7 @@ std::map<int, std::unique_ptr<Site>> CSiteManager::m_idMap;
 
 bool CSiteManager::Load(CSiteManagerXmlHandler& handler)
 {
-	CXmlFile file(wxGetApp().GetSettingsFile(_T("sitemanager")));
-	auto document = file.Load();
-	if (!document) {
-		wxMessageBoxEx(file.GetError(), _("Error loading xml file"), wxICON_ERROR);
-		return false;
-	}
-
-	auto element = document.child("Servers");
-	if (!element) {
-		return false;
-	}
-
-	return Load(element, handler);
+	return true;
 }
 
 bool CSiteManager::Load(pugi::xml_node element, CSiteManagerXmlHandler& handler)
@@ -308,28 +296,6 @@ void CSiteManager::ClearIdMap()
 
 bool CSiteManager::LoadPredefined(CSiteManagerXmlHandler& handler)
 {
-	CLocalPath const defaultsDir = wxGetApp().GetDefaultsDir();
-	if (defaultsDir.empty()) {
-		return false;
-	}
-
-	std::wstring const name(defaultsDir.GetPath() + _T("fzdefaults.xml"));
-	CXmlFile file(name);
-
-	auto document = file.Load();
-	if (!document) {
-		return false;
-	}
-
-	auto element = document.child("Servers");
-	if (!element) {
-		return false;
-	}
-
-	if (!Load(element, handler)) {
-		return false;
-	}
-
 	return true;
 }
 
@@ -441,148 +407,12 @@ std::pair<std::unique_ptr<Site>, Bookmark> CSiteManager::GetSiteByPath(std::wstr
 
 std::pair<std::unique_ptr<Site>, Bookmark> CSiteManager::DoGetSiteByPath(std::wstring sitePath, wxString& error)
 {
-	std::pair<std::unique_ptr<Site>, Bookmark> ret;
-	wxChar c = sitePath.empty() ? 0 : sitePath[0];
-	if (c != '0' && c != '1') {
-		error = _("Site path has to begin with 0 or 1.");
-		return ret;
-	}
-
-	sitePath = sitePath.substr(1);
-
-	// We have to synchronize access to sitemanager.xml so that multiple processed don't write
-	// to the same file or one is reading while the other one writes.
-	CInterProcessMutex mutex(MUTEX_SITEMANAGER);
-
-	CXmlFile file;
-	if (c == '0') {
-		file.SetFileName(wxGetApp().GetSettingsFile(_T("sitemanager")));
-	}
-	else {
-		CLocalPath const defaultsDir = wxGetApp().GetDefaultsDir();
-		if (defaultsDir.empty()) {
-			error = _("Site does not exist.");
-			return ret;
-		}
-		file.SetFileName(defaultsDir.GetPath() + _T("fzdefaults.xml"));
-	}
-
-	auto document = file.Load();
-	if (!document) {
-		wxMessageBoxEx(file.GetError(), _("Error loading xml file"), wxICON_ERROR);
-		return ret;
-	}
-
-	auto element = document.child("Servers");
-	if (!element) {
-		error = _("Site does not exist.");
-		return ret;
-	}
-
-	std::vector<std::wstring> segments;
-	if (!UnescapeSitePath(sitePath, segments) || segments.empty()) {
-		error = _("Site path is malformed.");
-		return ret;
-	}
-
-	auto child = GetElementByPath(element, segments);
-	if (!child) {
-		error = _("Site does not exist.");
-		return ret;
-	}
-
-	pugi::xml_node bookmark;
-	if (!strcmp(child.name(), "Bookmark")) {
-		bookmark = child;
-		child = child.parent();
-		segments.pop_back();
-	}
-
-	ret.first = ReadServerElement(child);
-	if (!ret.first) {
-		error = _("Could not read server item.");
-	}
-	else {
-		if (bookmark) {
-			Bookmark bm;
-			if (ReadBookmarkElement(bm, bookmark)) {
-				ret.second = bm;
-			}
-		}
-		else {
-			ret.second = ret.first->m_default_bookmark;
-		}
-
-		ret.first->SetSitePath(BuildPath(c, segments));
-	}
-
-	return ret;
+	return true;
 }
 
 std::wstring CSiteManager::AddServer(Site site)
 {
-	// We have to synchronize access to sitemanager.xml so that multiple processed don't write
-	// to the same file or one is reading while the other one writes.
-	CInterProcessMutex mutex(MUTEX_SITEMANAGER);
-
-	CXmlFile file(wxGetApp().GetSettingsFile(_T("sitemanager")));
-	auto document = file.Load();
-	if (!document) {
-		wxString msg = file.GetError() + _T("\n") + _("The server could not be added.");
-		wxMessageBoxEx(msg, _("Error loading xml file"), wxICON_ERROR);
-
-		return std::wstring();
-	}
-
-	auto element = document.child("Servers");
-	if (!element) {
-		element = document.append_child("Servers");
-	}
-
-	std::vector<std::wstring> names;
-	for (auto child = element.child("Server"); child; child = child.next_sibling("Server")) {
-		std::wstring name = GetTextElement(child, "Name");
-		if (name.empty()) {
-			continue;
-		}
-
-		names.push_back(name);
-	}
-
-	std::wstring name = fztranslate("New site");
-	int i = 1;
-
-	for (;;) {
-		std::vector<std::wstring>::const_iterator iter;
-		for (iter = names.cbegin(); iter != names.cend(); ++iter) {
-			if (*iter == name) {
-				break;
-			}
-		}
-		if (iter == names.cend()) {
-			break;
-		}
-
-		name = _("New site").ToStdWstring() + fz::sprintf(L" %d", ++i);
-	}
-
-	site.SetName(name);
-
-	auto xServer = element.append_child("Server");
-	SetServer(xServer, site);
-	AddTextElement(xServer, name);
-
-	if (!file.Save(false)) {
-		if (COptions::Get()->get_int(OPTION_DEFAULT_KIOSKMODE) == 2) {
-			return std::wstring();
-		}
-
-		std::wstring msg = fz::sprintf(fztranslate("Could not write \"%s\", any changes to the Site Manager could not be saved: %s"), file.GetFileName(), file.GetError());
-		wxMessageBoxEx(msg, _("Error writing xml file"), wxICON_ERROR);
-		return std::wstring();
-	}
-
-	return L"0/" + EscapeSegment(name);
+	return true;
 }
 
 pugi::xml_node CSiteManager::GetElementByPath(pugi::xml_node node, std::vector<std::wstring> const& segments)
@@ -619,150 +449,11 @@ pugi::xml_node CSiteManager::GetElementByPath(pugi::xml_node node, std::vector<s
 
 bool CSiteManager::AddBookmark(std::wstring sitePath, wxString const& name, wxString const& local_dir, CServerPath const& remote_dir, bool sync, bool comparison)
 {
-	if (local_dir.empty() && remote_dir.empty()) {
-		return false;
-	}
-
-	auto const c = sitePath[0];
-	if (c != '0') {
-		return false;
-	}
-
-	sitePath = sitePath.substr(1);
-
-	// We have to synchronize access to sitemanager.xml so that multiple processed don't write
-	// to the same file or one is reading while the other one writes.
-	CInterProcessMutex mutex(MUTEX_SITEMANAGER);
-
-	CXmlFile file(wxGetApp().GetSettingsFile(_T("sitemanager")));
-	auto document = file.Load();
-	if (!document) {
-		wxString msg = file.GetError() + _T("\n") + _("The bookmark could not be added.");
-		wxMessageBoxEx(msg, _("Error loading xml file"), wxICON_ERROR);
-
-		return false;
-	}
-
-	auto element = document.child("Servers");
-	if (!element) {
-		return false;
-	}
-
-	std::vector<std::wstring> segments;
-	if (!UnescapeSitePath(sitePath, segments)) {
-		wxMessageBoxEx(_("Site path is malformed."), _("Invalid site path"));
-		return 0;
-	}
-
-	auto child = GetElementByPath(element, segments);
-	if (!child || strcmp(child.name(), "Server")) {
-		wxMessageBoxEx(_("Site does not exist."), _("Invalid site path"));
-		return 0;
-	}
-
-	// Bookmarks
-	pugi::xml_node insertBefore, bookmark;
-	for (bookmark = child.child("Bookmark"); bookmark; bookmark = bookmark.next_sibling("Bookmark")) {
-		std::wstring old_name = GetTextElement_Trimmed(bookmark, "Name");
-		if (old_name.empty()) {
-			continue;
-		}
-
-		if (name == old_name) {
-			wxMessageBoxEx(_("Name of bookmark already exists."), _("New bookmark"), wxICON_EXCLAMATION);
-			return false;
-		}
-		if (name < old_name && !insertBefore) {
-			insertBefore = bookmark;
-		}
-	}
-
-	if (insertBefore) {
-		bookmark = child.insert_child_before("Bookmark", insertBefore);
-	}
-	else {
-		bookmark = child.append_child("Bookmark");
-	}
-	AddTextElement(bookmark, "Name", name.ToStdWstring());
-	if (!local_dir.empty()) {
-		AddTextElement(bookmark, "LocalDir", local_dir.ToStdWstring());
-	}
-	if (!remote_dir.empty()) {
-		AddTextElement(bookmark, "RemoteDir", remote_dir.GetSafePath());
-	}
-	if (sync) {
-		AddTextElementUtf8(bookmark, "SyncBrowsing", "1");
-	}
-	if (comparison) {
-		AddTextElementUtf8(bookmark, "DirectoryComparison", "1");
-	}
-
-	if (!file.Save(false)) {
-		if (COptions::Get()->get_int(OPTION_DEFAULT_KIOSKMODE) == 2) {
-			return true;
-		}
-
-		wxString msg = wxString::Format(_("Could not write \"%s\", the selected sites could not be exported: %s"), file.GetFileName(), file.GetError());
-		wxMessageBoxEx(msg, _("Error writing xml file"), wxICON_ERROR);
-	}
-
 	return true;
 }
 
 bool CSiteManager::ClearBookmarks(std::wstring sitePath)
 {
-	wxChar const c = sitePath.empty() ? 0 : sitePath[0];
-	if (c != '0') {
-		return false;
-	}
-
-	sitePath = sitePath.substr(1);
-
-	// We have to synchronize access to sitemanager.xml so that multiple processed don't write
-	// to the same file or one is reading while the other one writes.
-	CInterProcessMutex mutex(MUTEX_SITEMANAGER);
-
-	CXmlFile file(wxGetApp().GetSettingsFile(_T("sitemanager")));
-	auto document = file.Load();
-	if (!document) {
-		wxString msg = file.GetError() + _T("\n") + _("The bookmarks could not be cleared.");
-		wxMessageBoxEx(msg, _("Error loading xml file"), wxICON_ERROR);
-
-		return false;
-	}
-
-	auto element = document.child("Servers");
-	if (!element) {
-		return false;
-	}
-
-	std::vector<std::wstring> segments;
-	if (!UnescapeSitePath(sitePath, segments)) {
-		wxMessageBoxEx(_("Site path is malformed."), _("Invalid site path"));
-		return 0;
-	}
-
-	auto child = GetElementByPath(element, segments);
-	if (!child || strcmp(child.name(), "Server")) {
-		wxMessageBoxEx(_("Site does not exist."), _("Invalid site path"));
-		return 0;
-	}
-
-	auto bookmark = child.child("Bookmark");
-	while (bookmark) {
-		child.remove_child(bookmark);
-		bookmark = child.child("Bookmark");
-	}
-
-	if (!file.Save(false)) {
-		if (COptions::Get()->get_int(OPTION_DEFAULT_KIOSKMODE) == 2) {
-			return true;
-		}
-
-		wxString msg = wxString::Format(_("Could not write \"%s\", the selected sites could not be exported: %s"), file.GetFileName(), file.GetError());
-		wxMessageBoxEx(msg, _("Error writing xml file"), wxICON_ERROR);
-	}
-
 	return true;
 }
 
@@ -824,26 +515,6 @@ void CSiteManager::Rewrite(CLoginManager & loginManager, pugi::xml_node element,
 
 void CSiteManager::Rewrite(CLoginManager & loginManager, bool on_failure_set_to_ask)
 {
-	if (COptions::Get()->get_int(OPTION_DEFAULT_KIOSKMODE) == 2) {
-		return;
-	}
-	CInterProcessMutex mutex(MUTEX_SITEMANAGER);
-
-	CXmlFile file(wxGetApp().GetSettingsFile(_T("sitemanager")));
-	auto document = file.Load();
-	if (!document) {
-		wxMessageBoxEx(file.GetError(), _("Error loading xml file"), wxICON_ERROR);
-		return;
-	}
-
-	auto element = document.child("Servers");
-	if (!element) {
-		return;
-	}
-
-	Rewrite(loginManager, element, on_failure_set_to_ask);
-
-	file.Save(true);
 }
 
 void CSiteManager::Save(pugi::xml_node element, Site const& site)
@@ -932,27 +603,7 @@ pugi::xml_node GetOrCreateFolderWithName(pugi::xml_node element, std::wstring co
 
 bool CSiteManager::ImportSites(pugi::xml_node sites)
 {
-	CInterProcessMutex mutex(MUTEX_SITEMANAGER);
-
-	CXmlFile file(wxGetApp().GetSettingsFile(_T("sitemanager")));
-	auto element = file.Load();
-	if (!element) {
-		wxString msg = wxString::Format(_("Could not load \"%s\", please make sure the file is valid and can be accessed.\nAny changes made in the Site Manager will not be saved."), file.GetFileName());
-		wxMessageBoxEx(msg, _("Error loading xml file"), wxICON_ERROR);
-
-		return false;
-	}
-
-	auto currentSites = element.child("Servers");
-	if (!currentSites) {
-		currentSites = element.append_child("Servers");
-	}
-
-	if (!ImportSites(sites, currentSites)) {
-		return false;
-	}
-
-	return file.Save(true);
+	return true;
 }
 
 bool CSiteManager::ImportSites(pugi::xml_node sitesToImport, pugi::xml_node existingSites)
