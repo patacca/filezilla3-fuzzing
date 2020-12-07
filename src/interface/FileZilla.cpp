@@ -5,6 +5,7 @@
 #include <libfilezilla/util.hpp>
 
 #include <string.h>
+#include <unistd.h>
 
 __AFL_FUZZ_INIT();
 
