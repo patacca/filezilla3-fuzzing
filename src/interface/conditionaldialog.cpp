@@ -57,31 +57,6 @@ CConditionalDialog::CConditionalDialog(wxWindow* parent, DialogType type, Modes 
 
 bool CConditionalDialog::Run()
 {
-	wxString dialogs = COptions::Get()->get_string(OPTION_ONETIME_DIALOGS);
-	if (dialogs.size() > static_cast<size_t>(m_type) && dialogs[m_type] == '1') {
-		return true;
-	}
-
-	Fit();
-	wxGetApp().GetWrapEngine()->WrapRecursive(this, 3);
-
-	CenterOnParent();
-
-	int id = ShowModal();
-
-	auto cb = dynamic_cast<wxCheckBox*>(FindWindow(wxID_HIGHEST + 1));
-	if (cb && cb->GetValue()) {
-		while (dialogs.size() <= static_cast<size_t>(m_type)) {
-			dialogs += _T("0");
-		}
-		dialogs[m_type] = '1';
-		COptions::Get()->set(OPTION_ONETIME_DIALOGS, dialogs.ToStdWstring());
-	}
-
-	if (id == wxID_OK || id == wxID_YES) {
-		return true;
-	}
-
 	return false;
 }
 
