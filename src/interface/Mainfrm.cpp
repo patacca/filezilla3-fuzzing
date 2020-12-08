@@ -505,11 +505,6 @@ void CMainFrame::OnMenuHandler(wxCommandEvent &event)
 	else if (event.GetId() == XRCID("wxID_PREFERENCES")) {
 		OnMenuEditSettings(event);
 	}
-	else if (event.GetId() == XRCID("ID_MENU_EDIT_NETCONFWIZARD")) {
-		CNetConfWizard wizard(this, COptions::Get(), m_engineContext);
-		wizard.Load();
-		wizard.Run();
-	}
 	// Debug menu
 	else if (event.GetId() == XRCID("ID_CIPHERS")) {
 		CInputDialog dlg;
@@ -1347,34 +1342,6 @@ void CMainFrame::OnProcessQueue(wxCommandEvent& event)
 
 void CMainFrame::OnMenuEditSettings(wxCommandEvent&)
 {
-	CSettingsDialog dlg(m_engineContext);
-	if (!dlg.Create(this)) {
-		return;
-	}
-
-	COptions* pOptions = COptions::Get();
-
-	wxString oldLang = pOptions->get_string(OPTION_LANGUAGE);
-
-	int oldShowDebugMenu = pOptions->get_int(OPTION_DEBUG_MENU) != 0;
-
-	int res = dlg.ShowModal();
-	if (res != wxID_OK) {
-		return;
-	}
-
-	wxString newLang = pOptions->get_string(OPTION_LANGUAGE);
-
-	if (oldLang != newLang ||
-		oldShowDebugMenu != pOptions->get_int(OPTION_DEBUG_MENU))
-	{
-		CreateMenus();
-	}
-	if (oldLang != newLang) {
-		wxMessageBoxEx(_("FileZilla needs to be restarted for the language change to take effect."), _("Language changed"), wxICON_INFORMATION, this);
-	}
-
-	CheckChangedSettings();
 }
 
 void CMainFrame::OnToggleLogView(wxCommandEvent&)
