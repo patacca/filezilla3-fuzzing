@@ -33,7 +33,7 @@ class CState;
 class CToolBar;
 class CWindowStateManager;
 
-class CMainFrame final : public wxNavigationEnabled<wxFrame>, public COptionChangeEventHandler
+class CMainFrame final : public wxNavigationEnabled<wxFrame>
 #if FZ_MANUALUPDATECHECK
 	, protected CUpdateHandler
 #endif
