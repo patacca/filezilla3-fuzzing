@@ -33,7 +33,7 @@ class CState;
 class CToolBar;
 class CWindowStateManager;
 
-class CMainFrame final : public wxNavigationEnabled<wxFrame>
+class CMainFrame final : public wxNavigationEnabled<wxFrame>, public COptionChangeEventHandler
 #if FZ_MANUALUPDATECHECK
 	, protected CUpdateHandler
 #endif
@@ -92,7 +92,7 @@ private:
 	CSplitterWindowEx* m_pBottomSplitter{}; // Top contains view splitter, bottom queue (or queuelog splitter if in position 1)
 	CSplitterWindowEx* m_pQueueLogSplitter{};
 
-	CFileZillaEngineContext m_engineContext;
+	//~ CFileZillaEngineContext m_engineContext;
 	CContextControl* m_pContextControl{};
 
 	CStatusView* m_pStatusView{};

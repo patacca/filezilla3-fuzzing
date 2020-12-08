@@ -360,6 +360,7 @@ void ShowOverlay(std::wstring const& data, wxTopLevelWindow* parent, wxWindow* a
 
 CMainFrame::CMainFrame()
 	: COptionChangeEventHandler(this)
+	//~ , m_engineContext(*COptions::Get(), CustomEncodingConverter::Get())
 	, m_comparisonToggleAcceleratorId(wxNewId())
 {
 }
