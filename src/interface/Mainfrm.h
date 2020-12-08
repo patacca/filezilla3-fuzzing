@@ -68,7 +68,6 @@ public:
 
 	bool ConnectToSite(Site & data, Bookmark const& bookmark, CState* pState = 0);
 
-	CFileZillaEngineContext& GetEngineContext() { return m_engineContext; }
 	void OnEngineEvent(CFileZillaEngine* engine);
 
 private:
@@ -92,7 +91,6 @@ private:
 	CSplitterWindowEx* m_pBottomSplitter{}; // Top contains view splitter, bottom queue (or queuelog splitter if in position 1)
 	CSplitterWindowEx* m_pQueueLogSplitter{};
 
-	//~ CFileZillaEngineContext m_engineContext;
 	CContextControl* m_pContextControl{};
 
 	CStatusView* m_pStatusView{};
