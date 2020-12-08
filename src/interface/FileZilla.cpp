@@ -65,13 +65,13 @@ int main(int argc, char **argv)
 		
 		CState* pState = CContextManager::Get()->GetCurrentContext();
 		if (!pState || !pState->engine_) {
-			return;
+			return 1;
 		}
 
-		std::wstring host = "sftp://test.rebex.net";
-		std::wstring user = "demo";
-		std::wstring pass = "password";
-		std::wstring port = "22";
+		std::wstring host = _T("sftp://test.rebex.net");
+		std::wstring user = _T("demo");
+		std::wstring pass = _T("password");
+		std::wstring port = _T("22");
 
 		Site site;
 
@@ -79,8 +79,8 @@ int main(int argc, char **argv)
 
 		CServerPath path;
 		if (!site.ParseUrl(host, port, user, pass, error, path)) {
-			printf("Could not parse server address:\n%s", error);
-			return;
+			printf("Could not parse server address:\n%s", error.c_str());
+			return 1;
 		}
 
 		host = site.Format(ServerFormat::host_only);
@@ -107,7 +107,7 @@ int main(int argc, char **argv)
 
 		if (protocol == HTTP || protocol == HTTPS || protocol == S3) {
 			printf("Syntax error Invalid protocol specified. Valid protocols are:\nftp:// for normal FTP with optional encryption,\nsftp:// for SSH file transfer protocol,\nftps:// for FTP over TLS (implicit) and\nftpes:// for FTP over TLS (explicit).");
-			return;
+			return 1;
 		}
 
 		//~ site.server.SetBypassProxy(true);
@@ -119,7 +119,7 @@ int main(int argc, char **argv)
 		Bookmark bm;
 		bm.m_remoteDir = path;
 		if (!m_pMainFrame->ConnectToSite(site, bm)) {
-			return;
+			return 1;
 		}
 
 		CRecentServerList::SetMostRecentServer(site);
